@@ -8,25 +8,24 @@ typedef struct Item {//商品情報
     char name[100];
     int category;
     int price;
-    int salecount;
-    struct Item *next; // 次のItemへのポインタ
+    int purchased;
+    struct Item *next; // 次のItemへのポインタ //連結リスト
 } Item;
 
 Item *head = NULL; // 連結リストの先頭を指すポインタ
 
-void loadItemsFromFile(const char *filename) {
+void loadItemsFromFile(const char *filename){
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         perror("ファイルを開けません");
         return;
     }
-
     Item *current = head;
     while (!feof(file)) {
         Item *newItem = (Item *)malloc(sizeof(Item));
         if (fscanf(file, "%s %d %d", newItem->name, &newItem->category, &newItem->price) == 3) {
-            newItem->salecount = 0; // 初期販売数は0
             newItem->next = NULL;
+            newItem->purchased = 0;
             if (current == NULL) {
                 head = newItem;
                 current = newItem;
@@ -39,7 +38,6 @@ void loadItemsFromFile(const char *filename) {
             break;
         }
     }
-
     fclose(file);
 }
 
@@ -62,34 +60,30 @@ int money_sum(Money money){//お金の合計金額を計算
     return money.num_10000 * 10000 + money.num_5000 * 5000 + money.num_2000 * 2000 + money.num_1000 * 1000 + money.num_500 * 500 + money.num_100 * 100 + money.num_50 * 50 + money.num_10 * 10 + money.num_5 * 5 + money.num_1 * 1;
 }
 
-Money addMoney(Money money1, Money money2){//お金の加算
-    Money money = {0,0,0,0,0,0,0,0,0,0};
-    money.num_10000 = money1.num_10000 + money2.num_10000;
-    money.num_5000 = money1.num_5000 + money2.num_5000;
-    money.num_2000 = money1.num_2000 + money2.num_2000;
-    money.num_1000 = money1.num_1000 + money2.num_1000;
-    money.num_500 = money1.num_500 + money2.num_500;
-    money.num_100 = money1.num_100 + money2.num_100;
-    money.num_50 = money1.num_50 + money2.num_50;
-    money.num_10 = money1.num_10 + money2.num_10;
-    money.num_5 = money1.num_5 + money2.num_5;
-    money.num_1 = money1.num_1 + money2.num_1;
-    return money;
+void addMoney(Money *money1, Money *money2){//お金の加算
+    money1->num_10000 += money2->num_10000;
+    money1->num_5000 += money2->num_5000;
+    money1->num_2000 += money2->num_2000;
+    money1->num_1000 += money2->num_1000;
+    money1->num_500 += money2->num_500;
+    money1->num_100 += money2->num_100;
+    money1->num_50 += money2->num_50;
+    money1->num_10 += money2->num_10;
+    money1->num_5 += money2->num_5;
+    money1->num_1 += money2->num_1;
 }
 
-Money subMoney(Money money1, Money money2){//お金の引き算
-    Money money = {0,0,0,0,0,0,0,0,0,0};
-    money.num_10000 = money1.num_10000 - money2.num_10000;
-    money.num_5000 = money1.num_5000 - money2.num_5000;
-    money.num_2000 = money1.num_2000 - money2.num_2000;
-    money.num_1000 = money1.num_1000 - money2.num_1000;
-    money.num_500 = money1.num_500 - money2.num_500;
-    money.num_100 = money1.num_100 - money2.num_100;
-    money.num_50 = money1.num_50 - money2.num_50;
-    money.num_10 = money1.num_10 - money2.num_10;
-    money.num_5 = money1.num_5 - money2.num_5;
-    money.num_1 = money1.num_1 - money2.num_1;
-    return money;
+void subMoney(Money *money1, Money *money2){//お金の引き算
+    money1->num_10000 -= money2->num_10000;
+    money1->num_5000 -= money2->num_5000;
+    money1->num_2000 -= money2->num_2000;
+    money1->num_1000 -= money2->num_1000;
+    money1->num_500 -= money2->num_500;
+    money1->num_100 -= money2->num_100;
+    money1->num_50 -= money2->num_50;
+    money1->num_10 -= money2->num_10;
+    money1->num_5 -= money2->num_5;
+    money1->num_1 -= money2->num_1;
 }
 
 void inside_money_check(Money *inside_money) {//レジ内のお金の枚数を確認  //レジ内のお金の枚数が少ない場合は、コンビニ事務所の金庫から補充する
@@ -147,10 +141,10 @@ void calculateChange(int money, Money *inside_money) {//お釣り計算
         change.num_5000++;
         money -= 5000;
     }
-    while(money >= 2000){
+    /*while(money >= 2000){
         change.num_2000++;
         money -= 2000;
-    }
+    } */ //2000円札は使わない
     while(money >= 1000){
         change.num_1000++;
         money -= 1000;
@@ -179,14 +173,14 @@ void calculateChange(int money, Money *inside_money) {//お釣り計算
         change.num_1++;
         money -= 1;
     }
-    subMoney(*inside_money, change);
+    subMoney(inside_money, &change);
     printMoney(change);
 }
 
 void register_items(int *total_price, int *tax_price) {// 商品登録
     int is_continue = 1;
     char item_name[100];
-
+    int tax_price_item = 0;
     while(is_continue){
         printf("商品名を入力してください\n");
         scanf("%s", item_name);
@@ -199,17 +193,18 @@ void register_items(int *total_price, int *tax_price) {// 商品登録
         if (current == NULL) {
             printf("商品が見つかりませんでした。\n");
         } else {
+            current->purchased = 1;
+            if(current->category == 0){
+                tax_price_item += current->price * 0.08 / 1.08; // 消費税（軽減税率）
+            }else{
+                tax_price_item += current->price * 0.1 / 1.1; // 消費税
+            }
+            *total_price = *total_price + current->price -tax_price_item;
+            *tax_price += tax_price_item;
             printf("登録商品名: %s\n", current->name);
             printf("登録商品価格: %d\n", current->price);
-
-            *total_price += current->price;
-            if(current->category == 0){
-                *tax_price += current->price * 0.08; // 消費税（軽減税率）
-            }else{
-                *tax_price += current->price * 0.1; // 消費税
-            }
+            printf("うち消費税: %d\n", tax_price_item);
         }
-
         printf("登録を続けますか？(1:続ける, 0:終了)\n");
         scanf("%d", &is_continue);
     }
@@ -261,7 +256,9 @@ void printReceiptToFile(Item *purchasedItems, int total_price, int tax_price, in
 
     fprintf(file, "\n購入商品リスト:\n");
     while (purchasedItems != NULL) {
+        if(purchasedItems->purchased == 1){
         fprintf(file, "商品名: %s, 価格: %d円\n", purchasedItems->name, purchasedItems->price);
+        }
         purchasedItems = purchasedItems->next;
     }
 
@@ -281,17 +278,17 @@ void calculate(int *total_price, int *tax_price) {// 会計
 
     register_items(&current_total_price, &current_tax_price);
 
-    printf("合計金額:%d\n", current_total_price);
+    printf("合計金額:%d\n", current_total_price+current_tax_price);
     receive_payment(&received_money);
 
-    inside_money = addMoney(inside_money, received_money);
+    
     printf("お預かり金額:%d\n", money_sum(received_money));
     
     if(money_sum(received_money) < current_total_price) {
         printf("お預かり金額が足りません。\n");
         return;
     }
-
+    addMoney(&inside_money, &received_money);
     int change = money_sum(received_money) - current_total_price;
     printf("お釣り:%d\n", change);
     calculateChange(change, &inside_money);
@@ -300,33 +297,26 @@ void calculate(int *total_price, int *tax_price) {// 会計
     *tax_price += current_tax_price;
 }
 
-/*void addItem(){//新製品登録
-    printf("新製品登録を行います。\n");
-    printf("商品名を入力してください\n");
-    scanf("%s", items[0].name);
-    printf("商品価格を入力してください\n");
-    scanf("%d", &items[0].price);
-    printf("商品名:%s\n", items[0].name);
-    printf("商品価格:%d\n", items[0].price);
-}*/
-
-void check(int total_price_today,int initial_money){//在高点検
+void check(int total_price_today,int initial_money,int total_tax_today){//在高点検
     printf("在高点検を行います。\n");
     printf("レジ内の金額:%d\n", money_sum(inside_money));
-    printf("本日の売上金額:%d\n", total_price_today);
-    printf("+-差分:%d\n", money_sum(inside_money) - (initial_money + total_price_today));
+    printf("本日の売上金額:%d\n", total_price_today-total_tax_today);
+    printf("本日の消費税額:%d\n", total_tax_today);
+    printf("+-差分:%d\n", money_sum(inside_money) - (initial_money + total_price_today+total_tax_today));
 }
 
 void settlement(int *total_price_today, int *total_tax_today, int *refund_today, int *public_survice_today){//精算業務
     printf("精算を行います。\n");
-    printf("本日の売上金額:%d\n", *total_price_today);
-    *total_price_today = 0;
-    printf("本日の消費税額:%d\n", *total_tax_today);
-    *total_tax_today = 0;
     printf("本日の返金額:%d\n", *refund_today);
     *refund_today = 0;
     printf("本日の収納代行件数:%d\n", *public_survice_today);
     *public_survice_today = 0;
+    int sum =  *total_price_today;
+    calculateChange(sum,&inside_money);
+     printf("本日の売上金額:%d\n", *total_price_today);
+    *total_price_today = 0;
+    printf("本日の消費税額:%d\n", *total_tax_today);
+    *total_tax_today = 0;
     printf("レジ内の金額:%d\n", money_sum(inside_money));
 }
 
@@ -350,14 +340,13 @@ void refund(int *total_price_today, int *total_tax_today, int *refund_today, Mon
 
         refund_amount = current->price;
         printf("返金額: %d\n", refund_amount);
-
         calculateChange(refund_amount, inside_money); // レジ内のお金を更新
         *total_price_today -= refund_amount; // 売上金額から返金額を減算
 
         if(current->category == 0) {
-            *total_tax_today -= refund_amount * 0.08; // 消費税から返金額の消費税分を減算
+            *total_tax_today -= refund_amount * 0.08 / 1.08; // 消費税から返金額の消費税分を減算
         } else {
-            *total_tax_today -= refund_amount * 0.1; // 消費税から返金額の消費税分を減算
+            *total_tax_today -= refund_amount * 0.1 / 1.1; // 消費税から返金額の消費税分を減算
         }
         *refund_today += refund_amount; // 返金総額に返金額を加算
     }
@@ -389,28 +378,9 @@ int main(){
             calculate(&total_price_today, &total_tax_today);
             break;
         case 2:
-            {
-                int mode_check;
-                printf("レジ点検\n");
-                printf("モードを選択してください\n");
-                printf("1:在高点検\n");
-                printf("2:新製品登録\n");
-                printf("入力:");
-                scanf("%d", &mode_check);
-
-                switch(mode_check) {
-                    case 1:
-                        printf("在高点検\n");
-                        check(total_price_today, initial_money);
-                        break;
-                    case 2:
-                        printf("新製品登録\n");
-                       // addItem();
-                        break;
-                    default:
-                        printf("モードが不正です\n");
-                }
-            }
+            printf("レジ点検\n");
+            printf("在高点検\n");
+            check(total_price_today, initial_money, total_tax_today);
             break;
         case 3:
             printf("レジ精算\n");

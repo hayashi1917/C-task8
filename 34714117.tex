@@ -2,7 +2,7 @@
 \usepackage{fancyhdr}
 \usepackage[dvipdfmx]{graphicx}
 \usepackage{listings}
-\usepackage{xcolor}  
+\usepackage{xcolor}
 \renewcommand{\thepage}{\small -- \arabic{page} --}
 \rhead{}
 \lhead{}
@@ -16,7 +16,7 @@
   language=C,               
   basicstyle=\ttfamily,     
   keywordstyle=\color{blue},
-  commentstyle=\color{green}	,
+  commentstyle=\color{green},
   stringstyle=\color{red},
   numbers=left,
   numberstyle=\tiny,        
@@ -28,7 +28,7 @@
 \pagestyle{fancy}
 \lhead{{\thisyear}年度 プログラミングIII}
 
-\title{{\thisyear}年度 プログラミングIII 第8回 レポート}
+\title{{\thisyear}年度 自由課題 コンビニのレジシステムを実装}
 \date{\the\year 年\the\month 月\the\day 日}
 
 \author{34714117 \\ 林慶宏}
@@ -38,12 +38,679 @@
 \clearpage
 
 \section{はじめに}
-\section{自由課題}
+今回の自由課題では、コンビニのレジシステムを実装する。こう考えたきっかけとしては、私はコンビニでアルバイトをしていて、そこで頻繁に触るレジのシステムについて、どうすれば実装できるのだろうかと疑問に思ったからである。
 
+\section{関数の説明}
+このセクションでは、プログラム内の各関数について詳細に説明。
+\subsection{Item構造体}
+この構造体は、商品情報を管理するための連結リストの基本的な構造を定義している。ここで定義されたItemという構造体は、商品の名前、カテゴリー、価格、そして購入された回数といった情報を保持するためのフィールドを含んでいる。さらに、この構造体にはItem *nextというフィールドもあり、これは次のItem構造体へのポインタとして機能する。このような設計は、商品情報を連結リストとして効率的に管理するために用いられる。
+
+Item *head = NULL;という行は、この連結リストの先頭を指し示すポインタheadを宣言し、初期値としてNULLを設定している。これは、リストが空であることを意味している。このリストに新しいItemが追加されるたびに、headポインタは新しく追加されたItemを指すように更新される。
+
+このコードがこのように設計された理由は、商品情報の管理を柔軟にし、リストのサイズを必要に応じて動的に変更できるようにするためである。各Itemが次のItemを指すことで、連続したデータの流れを作り出し、リスト全体を通じてデータを追跡しやすくなる。このような構造は、商品情報が頻繁に更新される状況や、商品の数が事前に未定である場合に特に有効である。
+\subsection{loadItemsFromFile関数}
+loadItemsFromFile 関数は、指定されたファイルから商品情報を読み込み、それを連結リストの形でメモリに格納するためのものである。
+この関数はまず、指定されたファイルを読み込みモードで開く。フファイルが正常に開けた場合、関数はファイルの終わりまでデータの読み込みを続ける。この読み込みプロセスは feof 関数を使用してファイルの終わりを検出することで行われる。
+各繰り返し処理では、新しい Item 構造体を,mallocによって動的に確保し、fscanf を使用してファイルから商品名、カテゴリ、価格を読み込む。これらのデータが正しく読み込まれた場合（fscanf の戻り値が3である場合）、新しい Item の purchased フィールドを0に設定し、next ポインタを NULL にする。そして、この新しいアイテムを連結リストに追加する。リストが空の場合、新しいアイテムがリストの先頭になり、既にアイテムが存在する場合はリストの最後に追加される。
+fscanf からの戻り値が3以外の場合、ファイルの読み込みに問題があったと判断し、新しく確保したメモリを解放し、読み込みプロセスを中断する。
+関数の最後に、ファイルは fclose 関数を使用して閉じる。
+\subsection{構造体money}
+このC言語のコードは、レジ内の紙幣と硬貨の情報を管理するためのデータ構造を定義している。Moneyという名前の構造体を用いており、この構造体は各種類の紙幣と硬貨の枚数を保持するためのフィールドが含まれている。具体的には、10000円札、5000円札、2000円札、1000円札、500円玉、100円玉、50円玉、10円玉、5円玉、1円玉それぞれの枚数を整数型で保持している。
+このような構造体を定義することで、レジ内にある異なる額面の紙幣と硬貨の枚数を一つの変数内で集約的に管理することが可能になる。これにより、レジの金銭管理が容易になり、必要に応じて各額面の枚数を簡単に追加、削除、確認することができる。
+コード内で定義されている inside\_money という変数は、Money 構造体のインスタンスであり、初期値として各種額面の紙幣と硬貨の枚数が設定されている。この変数はレジ内の現在の紙幣と硬貨の枚数を表しており、プログラム内でレジの状態を追跡する際に使用される。
+\subsection{add,submoney関数,money\_sum関数}
+money\_sum関数は、引数として与えられたMoney構造体内の各額面の紙幣と硬貨の枚数に基づき、その総額を計算して返す。この関数は、各額面の紙幣と硬貨の枚数にそれぞれの額面の金額を乗じ、その合計を計算する。この関数は、レジ内の現金の合計金額を簡単に計算するために役立つ。
+subMoney関数は、2つのMoney構造体のポインタを引数として受け取り、第一引数のMoney構造体から第二引数のMoney構造体の額を引く。
+addMoney関数もまた、2つのMoney構造体のポインタを引数として受け取り、第一引数のMoney構造体に第二引数のMoney構造体の額を加える。
+ここで、引数にポインタを採用した理由としては、この関数内で行われた、money構造体の更新が、関数の外側にも反映されるようにするためである。その関数内では構造体のコピーが行われるため、関数内で行われた更新は、関数の外側には反映されない。
+\subsection{printmoney関数}
+この関数は、構造体moneyの中身を表示するための関数である。
+\subsection{calculateChange関数}
+この関数はお釣りの計算を行う関数である。
+関数の中で、最初にMoney型のローカル変数changeが宣言され、その全ての要素が0で初期化されている。これはお釣りの各種類の紙幣と硬貨の数を保持するため。
+その後、複数のwhileループがあり、それぞれのループは異なる額面の紙幣や硬貨に対してお釣りが可能かどうかを判断し、可能な場合はその額面の数を増やし、moneyからその額面を減算する。このプロセスは、moneyがその額面よりも小さくなるまで続けられる。
+2000円紙幣の処理がコメントアウトしている。
+私の働いているコンビニのレジは、2000円札の表記はあるが、2000円札が一般的に使用されていないため、お釣りとして扱わないという意図がある。
+最後に、subMoney関数を呼び出してinside\_moneyから計算されたお釣りchangeを減算し、printMoney関数を使ってお釣りの詳細を出力。これにより、使用された紙幣や硬貨の数をユーザーが確認できるようになっている。
+\subsection{register\_items関数}
+の関数は、ユーザーからの商品名の入力を受け、対応する商品が既存のリストに存在するかを確認し、存在する場合はその商品の価格情報を用いて合計価格と消費税の合計を更新する役割を持つ。
+関数の動作は、まずユーザーに商品名の入力を促し、その入力を受け取る。ここで、ユーザーが入力した商品名はitem\_nameという文字配列に格納。次に、この商品名が連結リスト内のどのItem型のノードと一致するかを確認するための線形検索が行われる。これを、strcmpで行っている。
+
+もし入力された商品名に一致する商品がリスト内に見つからなかった場合、関数は商品が見つからなかったことをユーザーに通知する。一方で、商品が見つかった場合には、その商品が購入されたとして処理され、purchasedフラグが1に設定される。また、商品のカテゴリに応じて、適切な消費税率（標準税率または軽減税率）が適用され、商品価格から消費税の額が計算。この計算結果は、合計価格と消費税の合計に反映される。
+
+合計価格は、商品の価格から計算された消費税額を差し引いた値を加算することで更新される。このプロセスは、ユーザーが登録を終了することを選択するまで繰り返されます。
+\subsection{receive\_payment関数}
+この関数は、引数として、客から受け取ったお金を表すMoney構造体の、receive\_moneyに、受け取ったお金を標準入力を用いて受け取る関数である。
+この関数の引数も、引数の変更が関数の外側にも反映されるように、ポインタを用いている。
+\subsection{printReceiptToFile関数}
+このC関数は、購入された商品のレシートをテキストファイルとして出力する機能を持っている。購入された商品の情報、合計金額、消費税額、受け取った金額、お釣りの情報を受け取り、それらをファイルに出力する。
+まず、この関数は現在の日時を取得する。これはライブラリ<time\_h>を使用している。まず、時間を格納している構造体time\_tを取得し、time\_t型のオブジェクトを現在の時間帯でstruct tmに変換する。time\_t tとstruct tm *localを使って、現在の日時を取得し、ローカルタイムに変換。これ、によってレシートに日付と時刻を記録する事ができた。
+
+次に、ファイル名を生成。ファイル名は現在の年、月、日、時間、分を含む形式で、sprintf関数を使用してフォーマットする。こうすることで、各レシートが独自のファイル名を持ち、識別しやすくなる。
+
+その後、fopen関数を使用してテキストファイルを書き込みモードで開きます
+
+ファイルが正常に開かれた後、レシートの内容がファイルに書き込まれる。これには、日時、購入された商品のリスト（商品名と価格）、合計金額、消費税、受け取った金額、お釣りの情報が含まれる。商品リストは、purchasedItemsポインタを使ってリンクリストをループ処理し、各商品の情報を出力する。
+
+最後に、ファイルを閉じる
+\subsection{calculate関数}
+この関数は、今まで作成した関数を用いて、レジの処理を行う関数である。
+流れとしては、まず、一回の会計での合計金額と消費税額、受け取り硬貨紙幣を格納する変数を宣言する。
+まずは買う商品を登録する。そのためにregister\_itemsを呼び出す。その次に、受け取ったお金を入力する。そのためにreceive\_paymentを呼び出す。
+受け取ったお金をレジ内金に入れる。
+受け取ったお金が購入商品学より大きいか判別する。その後、お釣りを計算する。そのためにcalculateChangeを呼び出す。
+最後に、レシートを出力する。そのためにprintReceiptToFileを呼び出す。
+また、引数にtotal\_priceとtax\_priceのポインタ型を持つ。これは、1日の合計売上と消費税を格納する変数だと意図している。そして最後に、それらの変数に」合計金額と消費税額を加算する。
+\subsection{check関数}
+この関数は、レジ業務の「在高点検」という業務を再現するために作ったものである。
+「在高点検」とは、通常のレジ業務以外で不正なお金の出し入れがないかを
+確認するものである。この関数は、レジ内の紙幣と硬貨の合計金額を計算し、
+最初に元々あったお金と、売上金額を比較することで、不正なお金の出し入れがないかを確認する。
+こちらは値を確認するものであり、値を変更するものではないため、引数にポインタを用いていない。
+\subsection{settlement関数}
+この関数は、レジ業務の「精算」という業務を再現するために作ったものである。
+「精算」とは、、ある時間内の間に売り上げた金額を数えること。通常は1日に一回行う。
+これを行うと、売上金額と消費税が０にリセットされる。
+これについては、値を更新するものであるため、引数にポインタを用いている。
+\subsection{refund関数}
+この関数は、特定の商業取引における返金処理を行うもの。引数には今日の総売上、消費税額、返金額、およびレジ内の現金状況を示す変数が含まれている。
+
+まず、顧客から返品された商品名を入力させる。次に、この商品名が商品リストに存在するかを確認するために、リストを順に検索。もし商品がリストになければ、商品が見つからなかった旨のメッセージを表示し。見つかった場合には、返品される商品の名前と価格を表示し、返金額を計算。
+
+返金処理では、まずレジ内の現金状況を更新。次に、今日の総売上から返金額を減算。これは、返品によって総売上が実質的に減少するため。
+
+さらに、消費税の計算も行われます商品のカテゴリに基づいて適切な消費税率を適用し、今日の総消費税から返金に相当する税額を減算。最後に、返金総額に今回の返金額を加算。
+\subsection{inside\_money\_check関数}
+この関数は、レジ内のお金の枚数を確認し、レジ内のお金の枚数が少ない場合は、コンビニ事務所の金庫から補充する業務を再現したものである。
+基本的に、１万円を事務所の金庫から持ってきて、それを両替して補充する。
+\subsection{main関数}
+最初に商品情報の入ったファイルを読み込む。そのためにloadItemsFromFile関数を呼び出す。ファイル名は"items.txt"
+これは、今まで作成した関数を実行するプラットホームの役割をもつ。
+最初にメニュー画面を表示し、その中からモードを選択する。
+1-5は、基本的に今まで作成した関数を呼び出すのみ。
+6は、繰り返しループから脱してプログラムを終了する。
+各モード終了時に、inside\_money\_check関数を呼び出し、レジ内のお金の枚数を確認する。
+また、変数として、一日の売上、消費税、返金額、収納代行（公共料金の支払いを代行するサービス）件数などの変数を持っている。
+収納代行については、今回は実装しなかった。
+\section{感想}
+今回の演習は、とても骨太なもので、非常に大変だった。自分のバイト先のレジシステムがいかに複雑で多機能だったかを実感した。それでも、自分が当初実装したかった機能を諦めたことも多かった。収納代行サービスの実装を諦め、カード決済やバーコード決済など、現代のコンビニで当たり前のように使われている機能を実装することができなかった。
+あと、商品の売上ランキングなども実装したかったが、私の「データ構造とアルゴリズム」関連の知識、演習不足なため、連結リストでのソートを実装することを諦めてしまった。このように、自分の知識不足が随所に見られ、妥協した部分も非常に多い、とても悔しい結果になってしまった。
+しかし、その分、自分の力でプログラムを作り上げたという達成感があった。また、今回の演習を通して、C言語の基礎的な知識を深めることができた。
+特に理解を深められた点として、ポインタである。はじめはポインタに非常に抵抗感を持っていたが、だんだん慣れてくると、直感的にメモリにアクセスしている感覚がみについて、使いこなせるようになってきた。
+また、連結リストの実装にチャレンジしたことも非常にいい経験となった。連結リストは、今までの演習ではあまり触れることがなかったので、今回の演習を通して、連結リストの基本的な構造を理解することができた。また、データ構造とアルゴリズムにより興味を持つことができた。
+今後は、これからもコンピューターサイエンスの勉強を続け、より高度で複雑なプログラムを作成できるようになりたい。
 \section{ソースコード}
+\fontsize{4pt}{10pt}\selectfont
+\begin{lstlisting}
+  //コンビニのレジシステムを再現する
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
+typedef struct Item {//商品情報
+    char name[100];
+    int category;
+    int price;
+    int purchased;
+    struct Item *next; // 次のItemへのポインタ //連結リスト
+} Item;
+
+Item *head = NULL; // 連結リストの先頭を指すポインタ
+
+void loadItemsFromFile(const char *filename){
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("ファイルを開けません");
+        return;
+    }
+    Item *current = head;
+    while (!feof(file)) {
+        Item *newItem = (Item *)malloc(sizeof(Item));
+        if (fscanf(file, "%s %d %d", newItem->name, &newItem->category, &newItem->price) == 3) {
+            newItem->next = NULL;
+            newItem->purchased = 0;
+            if (current == NULL) {
+                head = newItem;
+                current = newItem;
+            } else {
+                current->next = newItem;
+                current = newItem;
+            }
+        } else {
+            free(newItem);
+            break;
+        }
+    }
+    fclose(file);
+}
+
+typedef struct {//紙幣、硬貨の情報
+    int num_10000;//10000円札の枚数
+    int num_5000;//5000円札の枚数
+    int num_2000;//2000円札の枚数
+    int num_1000;//1000円札の枚数
+    int num_500;//500円玉の枚数
+    int num_100;//100円玉の枚数
+    int num_50;//50円玉の枚数
+    int num_10;//10円玉の枚数
+    int num_5;//5円玉の枚数
+    int num_1;//1円玉の枚数
+} Money;
+
+Money inside_money = {0,10,0,10,30,30,30,30,30,30}; // レジ内にある紙幣、硬貨の情報
+
+int money_sum(Money money){//お金の合計金額を計算
+    return money.num_10000 * 10000 + money.num_5000 * 5000 + money.num_2000 * 2000 + money.num_1000 * 1000 + money.num_500 * 500 + money.num_100 * 100 + money.num_50 * 50 + money.num_10 * 10 + money.num_5 * 5 + money.num_1 * 1;
+}
+
+void addMoney(Money *money1, Money *money2){//お金の加算
+    money1->num_10000 += money2->num_10000;
+    money1->num_5000 += money2->num_5000;
+    money1->num_2000 += money2->num_2000;
+    money1->num_1000 += money2->num_1000;
+    money1->num_500 += money2->num_500;
+    money1->num_100 += money2->num_100;
+    money1->num_50 += money2->num_50;
+    money1->num_10 += money2->num_10;
+    money1->num_5 += money2->num_5;
+    money1->num_1 += money2->num_1;
+}
+
+void subMoney(Money *money1, Money *money2){//お金の引き算
+    money1->num_10000 -= money2->num_10000;
+    money1->num_5000 -= money2->num_5000;
+    money1->num_2000 -= money2->num_2000;
+    money1->num_1000 -= money2->num_1000;
+    money1->num_500 -= money2->num_500;
+    money1->num_100 -= money2->num_100;
+    money1->num_50 -= money2->num_50;
+    money1->num_10 -= money2->num_10;
+    money1->num_5 -= money2->num_5;
+    money1->num_1 -= money2->num_1;
+}
+
+void inside_money_check(Money *inside_money) {//レジ内のお金の枚数を確認  //レジ内のお金の枚数が少ない場合は、コンビニ事務所の金庫から補充する
+    if(inside_money->num_10000 < 0) {
+        inside_money->num_10000++;//この１万円はコンビニ事務所の金庫にある
+    }else if(inside_money->num_5000<5){
+        inside_money->num_5000 += inside_money->num_10000 * 2;
+        inside_money->num_10000 = 0;
+    //else if(inside_money->num.2000<5) //2000円札は使わない
+    }else if(inside_money->num_1000<5){
+        inside_money->num_1000 += inside_money->num_5000 * 2;
+        inside_money->num_5000 = 0;
+    }else if(inside_money->num_500<5){
+        inside_money->num_500 += inside_money->num_1000 * 5;
+        inside_money->num_1000 = 0;
+    }else if(inside_money->num_100<10){
+        inside_money->num_100 += inside_money->num_500 * 2;
+        inside_money->num_500 = 0;
+    }else if(inside_money->num_50<10){
+        inside_money->num_50 += inside_money->num_100 * 5;
+        inside_money->num_100 = 0;
+    }else if(inside_money->num_10<10){
+        inside_money->num_10 += inside_money->num_50 * 5;
+        inside_money->num_50 = 0;
+    }else if(inside_money->num_5<10){
+        inside_money->num_5 += inside_money->num_10 * 2;
+        inside_money->num_10 = 0;
+    }else if(inside_money->num_1<10){
+        inside_money->num_1 += inside_money->num_5 * 5;
+        inside_money->num_5 = 0;
+    }
+}
+
+void printMoney(Money money) { //お金情報の表示//これ要る？
+    printf("1万円札の枚数:%d\n", money.num_10000);
+    printf("5千円札の枚数:%d\n", money.num_5000);
+    printf("2千円札の枚数:%d\n", money.num_2000);
+    printf("1千円札の枚数:%d\n", money.num_1000);
+    printf("500円玉の枚数:%d\n", money.num_500);
+    printf("100円玉の枚数:%d\n", money.num_100);
+    printf("50円玉の枚数:%d\n", money.num_50);
+    printf("10円玉の枚数:%d\n", money.num_10);
+    printf("5円玉の枚数:%d\n", money.num_5);
+    printf("1円玉の枚数:%d\n", money.num_1);
+}
+
+void calculateChange(int money, Money *inside_money) {//お釣り計算
+    Money change = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    while(money >= 10000){
+        change.num_10000++;
+        money -= 10000;
+    }
+    while(money >= 5000){
+        change.num_5000++;
+        money -= 5000;
+    }
+    /*while(money >= 2000){
+        change.num_2000++;
+        money -= 2000;
+    } */ //2000円札は使わない
+    while(money >= 1000){
+        change.num_1000++;
+        money -= 1000;
+    }
+    while(money >= 500){
+        change.num_500++;
+        money -= 500;
+    }
+    while(money >= 100){
+        change.num_100++;
+        money -= 100;
+    }
+    while(money >= 50){
+        change.num_50++;
+        money -= 50;
+    }
+    while(money >= 10){
+        change.num_10++;
+        money -= 10;
+    }
+    while(money >= 5){
+        change.num_5++;
+        money -= 5;
+    }
+    while(money >= 1){
+        change.num_1++;
+        money -= 1;
+    }
+    subMoney(inside_money, &change);
+    printMoney(change);
+}
+
+void register_items(int *total_price, int *tax_price) {// 商品登録
+    int is_continue = 1;
+    char item_name[100];
+    int tax_price_item = 0;
+    while(is_continue){
+        printf("商品名を入力してください\n");
+        scanf("%s", item_name);
+
+        Item *current = head;
+        while(current != NULL && strcmp(current->name, item_name) != 0) {
+            current = current->next;
+        }
+
+        if (current == NULL) {
+            printf("商品が見つかりませんでした。\n");
+        } else {
+            current->purchased = 1;
+            if(current->category == 0){
+                tax_price_item += current->price * 0.08 / 1.08; // 消費税（軽減税率）
+            }else{
+                tax_price_item += current->price * 0.1 / 1.1; // 消費税
+            }
+            *total_price = *total_price + current->price -tax_price_item;
+            *tax_price += tax_price_item;
+            printf("登録商品名: %s\n", current->name);
+            printf("登録商品価格: %d\n", current->price);
+            printf("うち消費税: %d\n", tax_price_item);
+        }
+        printf("登録を続けますか？(1:続ける, 0:終了)\n");
+        scanf("%d", &is_continue);
+    }
+}
+
+void receive_payment(Money *received_money) {// 受け取った金額の入力
+    printf("受け取り金額\n");
+    printf("1万円札の枚数:");
+    scanf("%d", &received_money->num_10000);
+    printf("5千円札の枚数:");
+    scanf("%d", &received_money->num_5000);
+    printf("2千円札の枚数:");
+    scanf("%d", &received_money->num_2000);
+    printf("1千円札の枚数:");
+    scanf("%d", &received_money->num_1000);
+    printf("500円玉の枚数:");
+    scanf("%d", &received_money->num_500);
+    printf("100円玉の枚数:");
+    scanf("%d", &received_money->num_100);
+    printf("50円玉の枚数:");
+    scanf("%d", &received_money->num_50);
+    printf("10円玉の枚数:");
+    scanf("%d", &received_money->num_10);
+    printf("5円玉の枚数:");
+    scanf("%d", &received_money->num_5);
+    printf("1円玉の枚数:");
+    scanf("%d", &received_money->num_1);
+}
+
+void printReceiptToFile(Item *purchasedItems, int total_price, int tax_price, int received_money, int change) {// レシートの出力
+ // 現在の日時を取得
+    time_t t = time(NULL);
+    struct tm *local = localtime(&t);
+
+    // ファイル名を格納するための文字列バッファ
+    char filename[50];
+
+    // ファイル名をsprintfを使ってフォーマット
+    sprintf(filename, "%d-%d-%d-%d:%d-receipt.txt", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min);
+
+    // ファイルを開く
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        perror("ファイルを開けません");
+        return;
+    }
+    fprintf(file, "--- レシート ---\n");
+    fprintf(file, "%d-%d-%d %d:%d\n", local->tm_year + 1900, local->tm_mon + 1, local->tm_mday, local->tm_hour, local->tm_min); // 現在の日付と時刻
+
+    fprintf(file, "\n購入商品リスト:\n");
+    while (purchasedItems != NULL) {
+        if(purchasedItems->purchased == 1){
+        fprintf(file, "商品名: %s, 価格: %d円\n", purchasedItems->name, purchasedItems->price);
+        }
+        purchasedItems = purchasedItems->next;
+    }
+
+    fprintf(file, "\n合計金額: %d円\n", total_price);
+    fprintf(file, "消費税: %d円\n", tax_price);
+    fprintf(file, "お預かり金額: %d円\n", received_money);
+    fprintf(file, "お釣り: %d円\n", change);
+    fprintf(file, "-------------------\n");
+
+    fclose(file);
+}
+
+void calculate(int *total_price, int *tax_price) {// 会計
+    Money received_money = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    int current_total_price = 0;
+    int current_tax_price = 0;
+
+    register_items(&current_total_price, &current_tax_price);
+
+    printf("合計金額:%d\n", current_total_price+current_tax_price);
+    receive_payment(&received_money);
+
+    
+    printf("お預かり金額:%d\n", money_sum(received_money));
+    
+    if(money_sum(received_money) < current_total_price) {
+        printf("お預かり金額が足りません。\n");
+        return;
+    }
+    addMoney(&inside_money, &received_money);
+    int change = money_sum(received_money) - current_total_price;
+    printf("お釣り:%d\n", change);
+    calculateChange(change, &inside_money);
+    printReceiptToFile(head, current_total_price, current_tax_price, money_sum(received_money), change);
+    *total_price += current_total_price;
+    *tax_price += current_tax_price;
+}
+
+void check(int total_price_today,int initial_money,int total_tax_today){//在高点検
+    printf("在高点検を行います。\n");
+    printf("レジ内の金額:%d\n", money_sum(inside_money));
+    printf("本日の売上金額:%d\n", total_price_today-total_tax_today);
+    printf("本日の消費税額:%d\n", total_tax_today);
+    printf("+-差分:%d\n", money_sum(inside_money) - (initial_money + total_price_today+total_tax_today));
+}
+
+void settlement(int *total_price_today, int *total_tax_today, int *refund_today, int *public_survice_today){//精算業務
+    printf("精算を行います。\n");
+    printf("本日の返金額:%d\n", *refund_today);
+    *refund_today = 0;
+    printf("本日の収納代行件数:%d\n", *public_survice_today);
+    *public_survice_today = 0;
+    int sum =  *total_price_today;
+    calculateChange(sum,&inside_money);
+     printf("本日の売上金額:%d\n", *total_price_today);
+    *total_price_today = 0;
+    printf("本日の消費税額:%d\n", *total_tax_today);
+    *total_tax_today = 0;
+    printf("レジ内の金額:%d\n", money_sum(inside_money));
+}
+
+void refund(int *total_price_today, int *total_tax_today, int *refund_today, Money *inside_money) {// 返金
+    char item_name[100];
+    int refund_amount;
+
+    printf("返品する商品名を入力してください\n");
+    scanf("%s", item_name);
+
+    Item *current = head;
+    while(current != NULL && strcmp(current->name, item_name) != 0) {
+        current = current->next;
+    }
+
+    if (current == NULL) {
+        printf("商品が見つかりませんでした。\n");
+    } else {
+        printf("返品商品名: %s\n", current->name);
+        printf("返品商品価格: %d\n", current->price);
+
+        refund_amount = current->price;
+        printf("返金額: %d\n", refund_amount);
+        calculateChange(refund_amount, inside_money); // レジ内のお金を更新
+        *total_price_today -= refund_amount; // 売上金額から返金額を減算
+
+        if(current->category == 0) {
+            *total_tax_today -= refund_amount * 0.08 / 1.08; // 消費税から返金額の消費税分を減算
+        } else {
+            *total_tax_today -= refund_amount * 0.1 / 1.1; // 消費税から返金額の消費税分を減算
+        }
+        *refund_today += refund_amount; // 返金総額に返金額を加算
+    }
+}
+
+int main(){
+    int initial_money = money_sum(inside_money); // レジの初期金額
+    int mode; // モード
+    int total_price_today = 0; // 本日の売上金額
+    int total_tax_today = 0; // 本日の消費税額
+    int refund_today = 0; // 本日の返金額
+    int public_survice_today = 0; // 本日の収納代行件数
+    int is_continue = 1; // 続けるかどうか
+    loadItemsFromFile("items.txt"); // 商品情報の読み込み
+
+    while(is_continue){
+        printf("モードを選択してください\n");
+        printf("1:会計\n");
+        printf("2:レジ点検\n");
+        printf("3:レジ精算\n");
+        printf("4:返金\n");
+        printf("5:収納代行\n");//収納代行は、コンビニのレジで公共料金の支払いなどを行うこと
+        printf("6:レジ休止\n");
+        printf("入力:");
+        scanf("%d", &mode);
+
+        switch(mode) {
+        case 1:
+            calculate(&total_price_today, &total_tax_today);
+            break;
+        case 2:
+            printf("レジ点検\n");
+            printf("在高点検\n");
+            check(total_price_today, initial_money, total_tax_today);
+            break;
+        case 3:
+            printf("レジ精算\n");
+            printf("精算します。\n");
+            settlement(&total_price_today, &total_tax_today, &refund_today, &public_survice_today);
+            break;
+        
+        case 4:
+            printf("返金\n");
+            refund(&total_price_today, &total_tax_today, &refund_today, &inside_money);
+            break;
+        case 5:
+            printf("収納代行\n");
+            public_survice_today++;//今回は収納代行件数をカウントするだけで、実際に実装はしない
+            printf("収納代行サービスを行いました。\n"   );
+            break;
+        case 6:
+            printf("レジ休止\n");
+            printf("休止します。\n");
+            is_continue = 0;
+            break;
+        default:
+            printf("モードが不正です\n");
+        }
+        inside_money_check(&inside_money);
+    }
+}
+  
+  \end{lstlisting}
+\fontsize{10pt}{10pt}\selectfont
 \section{実行結果}
 \begin{verbatim}
+##会計
+モードを選択してください
+1:会計
+2:レジ点検
+3:レジ精算
+4:返金
+5:収納代行
+6:レジ休止
+入力:1
+商品名を入力してください
+おにぎり
+登録商品名: おにぎり
+登録商品価格: 120
+うち消費税: 8
+登録を続けますか？(1:続ける, 0:終了)
+1
+商品名を入力してください
+セブンスター
+登録商品名: セブンスター
+登録商品価格: 600
+うち消費税: 62
+登録を続けますか？(1:続ける, 0:終了)
+1
+商品名を入力してください
+クランキーチキン
+登録商品名: クランキーチキン
+登録商品価格: 291
+うち消費税: 83
+登録を続けますか？(1:続ける, 0:終了)
+0
+合計金額:1011
+受け取り金額
+1万円札の枚数:0
+5千円札の枚数:1
+2千円札の枚数:0
+1千円札の枚数:0
+500円玉の枚数:0
+100円玉の枚数:0
+50円玉の枚数:0
+10円玉の枚数:0
+5円玉の枚数:0
+1円玉の枚数:0
+お預かり金額:5000
+お釣り:4142
+1万円札の枚数:0
+5千円札の枚数:0
+2千円札の枚数:0
+1千円札の枚数:4
+500円玉の枚数:0
+100円玉の枚数:1
+50円玉の枚数:0
+10円玉の枚数:4
+5円玉の枚数:0
+1円玉の枚数:2
+
+##返金
+モードを選択してください
+1:会計
+2:レジ点検
+3:レジ精算
+4:返金
+5:収納代行
+6:レジ休止
+入力:4
+返金
+返品する商品名を入力してください
+クランキーチキン
+返品商品名: クランキーチキン
+返品商品価格: 291
+返金額: 291
+1万円札の枚数:0
+5千円札の枚数:0
+2千円札の枚数:0
+1千円札の枚数:0
+500円玉の枚数:0
+100円玉の枚数:2
+50円玉の枚数:1
+10円玉の枚数:4
+5円玉の枚数:0
+1円玉の枚数:1
+
+##レジ精算
+レジ精算
+精算します。
+精算を行います。
+本日の返金額:291
+本日の収納代行件数:0
+1万円札の枚数:0
+5千円札の枚数:0
+2千円札の枚数:0
+1千円札の枚数:0
+500円玉の枚数:1
+100円玉の枚数:0
+50円玉の枚数:1
+10円玉の枚数:1
+5円玉の枚数:1
+1円玉の枚数:2
+本日の売上金額:567
+本日の消費税額:131
+レジ内の金額:79980
+モードを選択してください
+1:会計
+2:レジ点検
+3:レジ精算
+4:返金
+5:収納代行
+6:レジ休止
+
+##レジ点検
+入力:2
+レジ点検
+在高点検
+在高点検を行います。
+レジ内の金額:79980
+本日の売上金額:0
+本日の消費税額:0
++-差分:0
+モードを選択してください
+1:会計
+2:レジ点検
+3:レジ精算
+4:返金
+5:収納代行
+6:レジ休止
+
+##入力ファイルの例
+セブンスター 1 600
+テリアメンソール 1 580
+おにぎり 0 120
+ペットボトルのお茶 0 150
+パン 0 200
+ソフトクリームバニラ 0 270
+香るベトナムカカオチョコソフト 0 313
+プレミアムショコラソフト 0 421
+ダブル蜜いもソフト 0 464
+なめらかプリンパフェ 0 410
+ピスタチオカカオパフェ 0 432
+クランキーチキン 0 291
+Xフライドポテト 0 291
+北海道チーズインナゲット 0 291
+
+##出力ファイルの例
+--- レシート ---
+2023-12-21 12:29
+
+購入商品リスト:
+商品名: セブンスター, 価格: 600円
+商品名: おにぎり, 価格: 120円
+
+合計金額: 604円
+消費税: 116円
+お預かり金額: 5000円
+お釣り: 4396円
+-------------------
 
 \end{verbatim}
 \end{document}
