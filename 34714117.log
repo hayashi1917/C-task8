@@ -1,4 +1,4 @@
-This is e-pTeX, Version 3.141592653-p3.9.1-210218-2.6 (utf8.euc) (TeX Live 2022/dev/Debian) (preloaded format=platex 2023.10.19)  21 DEC 2023 13:37
+This is e-pTeX, Version 3.141592653-p3.9.1-210218-2.6 (utf8.euc) (TeX Live 2022/dev/Debian) (preloaded format=platex 2023.10.19)  21 DEC 2023 13:48
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -292,10 +292,6 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 [5]
 
 LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <4> not available
-(Font)              size <5> substituted on input line 143.
-
-
-LaTeX Font Warning: Font shape `OT1/cmtt/m/n' in size <4> not available
 (Font)              size <5> substituted on input line 144.
 
 
@@ -307,7 +303,12 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-3.49998pt}.
 
 [6]
-Overfull \hbox (305.57982pt too wide) in paragraph at lines 204--205
+
+LaTeX Font Warning: Font shape `OT1/cmtt/m/n' in size <4> not available
+(Font)              size <5> substituted on input line 145.
+
+
+Overfull \hbox (305.57982pt too wide) in paragraph at lines 205--206
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][
 ][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 [][][][][][][][][][][][][][][][][][][][][][][][][][] 
@@ -340,14 +341,14 @@ Package fancyhdr Warning: \headheight is too small (12.0pt):
 (fancyhdr)                \addtolength{\topmargin}{-3.49998pt}.
 
 [9]
-Overfull \hbox (31.44826pt too wide) in paragraph at lines 390--392
+Overfull \hbox (31.44826pt too wide) in paragraph at lines 391--393
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][
 ][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 [][][][][][][][][][] 
  []
 
 
-Overfull \hbox (3.42136pt too wide) in paragraph at lines 399--401
+Overfull \hbox (3.42136pt too wide) in paragraph at lines 400--402
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][
 ][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]
 [][][][][][][][][][][][][][]\JY1/mc/m/n/4 現
@@ -415,10 +416,10 @@ LaTeX Font Warning: Size substitutions with differences
 Here is how much of TeX's memory you used:
  4460 strings out of 478741
  62549 string characters out of 5860981
- 658492 words of memory out of 5000000
+ 660492 words of memory out of 5000000
  22858 multiletter control sequences out of 15000+600000
  484545 words of font info for 88 fonts, out of 8000000 for 9000
  929 hyphenation exceptions out of 8191
  55i,12n,62p,454b,1933s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on 34714117.dvi (15 pages, 132216 bytes).
+Output written on 34714117.dvi (15 pages, 133140 bytes).
